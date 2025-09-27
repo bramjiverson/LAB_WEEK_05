@@ -6,10 +6,11 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface CatApiService {
+
     @GET("images/search")
     fun searchImages(
         @Query("limit") limit: Int,
-        @Query("size") format: String
-    ) : Call<List<ImageData>>
+        @Query("size") size: String,
+        @Query("has_breeds") hasBreeds: Int = 1
+    ): Call<List<ImageData>>
 }
-

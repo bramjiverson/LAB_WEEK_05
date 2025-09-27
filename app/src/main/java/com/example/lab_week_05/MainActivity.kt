@@ -2,6 +2,7 @@ package com.example.lab_week_05
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -41,6 +42,10 @@ class MainActivity : AppCompatActivity() {
         findViewById(R.id.image_result)
     }
 
+    private val refreshButton: Button by lazy {
+        findViewById(R.id.refresh_button)
+    }
+
     private val imageLoader: ImageLoader by lazy {
         GlideLoader(this)
     }
@@ -49,11 +54,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Load pertama
         getCatImageResponse()
+
+        // Kalau tombol refresh diklik
+        refreshButton.setOnClickListener {
+            apiResponseView.text = "Loading..."
+            getCatImageResponse()
+        }
     }
 
     private fun getCatImageResponse() {
-        val call = catApiService.searchImages(1, "full")
+        val call = catApiService.searchImages(1, "full", 1)
         call.enqueue(object : Callback<List<ImageData>> {
             override fun onFailure(call: Call<List<ImageData>>, t: Throwable) {
                 Log.e(MAIN_ACTIVITY, "Failed to get response", t)
@@ -64,21 +76,23 @@ class MainActivity : AppCompatActivity() {
                 response: Response<List<ImageData>>
             ) {
                 if (response.isSuccessful) {
-                    val image = response.body()
-                    val firstImage = image?.firstOrNull()?.imageUrl.orEmpty()
+                    val imageList = response.body()
+                    val firstImage = imageList?.firstOrNull()
 
-                    if (firstImage.isNotBlank()) {
-                        imageLoader.loadImage(firstImage, imageResultView)
+                    val imageUrl = firstImage?.imageUrl.orEmpty()
+                    val breedName = firstImage?.breeds?.firstOrNull()?.name ?: "Unknown"
+
+                    if (imageUrl.isNotBlank()) {
+                        imageLoader.loadImage(imageUrl, imageResultView)
                     } else {
                         Log.d(MAIN_ACTIVITY, "Missing image URL")
                     }
 
-                    apiResponseView.text =
-                        getString(R.string.image_placeholder, firstImage)
+                    apiResponseView.text = breedName
                 } else {
                     Log.e(
-                        MAIN_ACTIVITY, "Failed to get response\n" +
-                                response.errorBody()?.string().orEmpty()
+                        MAIN_ACTIVITY,
+                        "Failed to get response\n" + response.errorBody()?.string().orEmpty()
                     )
                 }
             }
